@@ -27,7 +27,7 @@ def add(ctx, description: str) -> None:
 def list(ctx) -> None:
     """List uncompleted tasks"""
     with ctx.obj["engine"].connect() as conn:
-        stmt = select(Task.__table__)
+        stmt = select(Task).where(Task.completed == False)
         tasks = conn.execute(stmt).fetchall()
     for task in tasks:
         print(*task)
