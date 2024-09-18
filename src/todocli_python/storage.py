@@ -1,5 +1,12 @@
 from datetime import datetime
-from sqlalchemy import DateTime, Engine, create_engine, String, Boolean, func
+from sqlalchemy import (
+    DateTime,
+    Engine,
+    create_engine,
+    String,
+    Boolean,
+    func,
+)
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
 MAX_DESC_CHARS = 1000

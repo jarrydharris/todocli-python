@@ -1,6 +1,6 @@
 import click
 from storage import Task, init_db
-from sqlalchemy import Engine, insert, select
+from sqlalchemy import Engine, insert, select, update
 
 
 @click.group()
@@ -15,16 +15,17 @@ def cli(ctx) -> None:
 @click.argument("description")
 @click.pass_context
 def add(ctx, description: str) -> None:
-    """tasks add \"Task description\" """
+    """Add a new task to your list"""
     with ctx.obj["engine"].connect() as conn:
         stmt = insert(Task).values(description=description)
         conn.execute(stmt)
+        conn.commit()
 
 
 @cli.command
 @click.pass_context
 def list(ctx) -> None:
-    """tasks list"""
+    """List uncompleted tasks"""
     with ctx.obj["engine"].connect() as conn:
         stmt = select(Task.__table__)
         tasks = conn.execute(stmt).fetchall()
@@ -32,6 +33,15 @@ def list(ctx) -> None:
         print(*task)
 
 
-if __name__ == "__main__":
+@cli.command
+@click.pass_context
+@click.argument("id")
+def complete(ctx, id: str) -> None:
+    with ctx.obj["engine"].connect() as conn:
+        stmt = update(Task).where(Task.id == id).values({"completed": True})
+        conn.execute(stmt)
+        conn.commit()
 
+
+if __name__ == "__main__":
     cli(obj={})
