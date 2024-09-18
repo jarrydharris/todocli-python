@@ -2,6 +2,7 @@ import click
 import sqlalchemy
 from storage import Task, init_db
 from sqlalchemy import Engine, insert, select, update
+import prettytable
 
 
 @click.group()
@@ -29,12 +30,16 @@ def add(ctx, description: str) -> None:
 def list(ctx, all: bool) -> None:
     """List uncompleted tasks"""
     with ctx.obj["engine"].connect() as conn:
-        stmt = select(Task).where(Task.completed == False)
+        stmt = select(Task.id, Task.description, Task.created).where(
+            Task.completed == False
+        )
         if all:
-            stmt = select(Task)
+            stmt = select(Task.id, Task.description, Task.created)
         tasks = conn.execute(stmt).fetchall()
-    for task in tasks:
-        print(*task)
+    table = prettytable.PrettyTable(["ID", "Description", "Created"])
+    table.add_rows(tasks)
+    table.align = "l"
+    print(table)
 
 
 @cli.command
