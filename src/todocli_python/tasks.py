@@ -1,4 +1,5 @@
 import click
+import sqlalchemy
 from storage import Task, init_db
 from sqlalchemy import Engine, insert, select, update
 
@@ -39,6 +40,16 @@ def list(ctx) -> None:
 def complete(ctx, id: str) -> None:
     with ctx.obj["engine"].connect() as conn:
         stmt = update(Task).where(Task.id == id).values({"completed": True})
+        conn.execute(stmt)
+        conn.commit()
+
+
+@cli.command
+@click.pass_context
+@click.argument("id")
+def delete(ctx, id: str) -> None:
+    with ctx.obj["engine"].connect() as conn:
+        stmt = sqlalchemy.delete(Task).where(Task.id == id)
         conn.execute(stmt)
         conn.commit()
 
