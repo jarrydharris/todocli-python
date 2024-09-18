@@ -24,11 +24,14 @@ def add(ctx, description: str) -> None:
 
 
 @cli.command
+@click.option("-a", "--all", is_flag=True, default=False)
 @click.pass_context
-def list(ctx) -> None:
+def list(ctx, all: bool) -> None:
     """List uncompleted tasks"""
     with ctx.obj["engine"].connect() as conn:
         stmt = select(Task).where(Task.completed == False)
+        if all:
+            stmt = select(Task)
         tasks = conn.execute(stmt).fetchall()
     for task in tasks:
         print(*task)
