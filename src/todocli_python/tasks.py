@@ -8,6 +8,10 @@ from time_since_created import elapsed_time_str
 
 from prettytable.colortable import ColorTable, Themes
 
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+END = "\033[0m"
+
 # ================================================================
 # This section contains the core functionality.
 # ================================================================
@@ -17,7 +21,11 @@ def get_db_time(engine: Engine) -> datetime:
     with engine.connect() as conn:
         stmt = "SELECT DATETIME('now', 'localtime');"
         time = conn.execute(text(stmt)).fetchone()
-    return time[0]
+    return datetime.fromisoformat(time[0]).strftime("%H:%M %d-%b-%Y")
+
+
+def show_table_title(engine: Engine) -> None:
+    print(f"\n{BOLD + UNDERLINE}Tasks @ {get_db_time(engine)}{END}")
 
 
 def add_task(engine: Engine, description: str):
@@ -27,18 +35,25 @@ def add_task(engine: Engine, description: str):
         conn.commit()
 
 
+def strike(text):
+    return "".join(["\u0336{}".format(c) for c in text])
+
+
 def show_tasks(tasks: list[tuple[int, str, datetime]]):
     table = ColorTable(["ID", "Description", "Created"], theme=Themes.MINE)
 
     for task in tasks:
-        table.add_row((task[0], task[1], elapsed_time_str(task[2])))
+        row = [task[0], task[1], elapsed_time_str(task[2])]
+        if task[3] == True:
+            row = [strike(str(element)) for element in row]
+        table.add_row(row)
 
     table.align = "l"
-    print(table)
+    print(table, "\n")
 
 
 def get_tasks(engine: Engine, all: bool) -> list[tuple[int, str, datetime]]:
-    stmt = select(Task.id, Task.description, Task.created)
+    stmt = select(Task.id, Task.description, Task.created, Task.completed)
     if not all:
         stmt = stmt.where(Task.completed == False)
     with engine.connect() as conn:
@@ -63,6 +78,15 @@ def complete_task(engine: Engine, id: int):
 def delete_task(engine: Engine, id: int):
     with engine.connect() as conn:
         stmt = sqlalchemy.delete(Task).where(Task.id == id)
+        conn.execute(stmt)
+        conn.commit()
+
+
+def clear_tasks(engine: Engine, all: bool):
+    with engine.connect() as conn:
+        stmt = sqlalchemy.delete(Task)
+        if not all:
+            stmt = stmt.where(Task.completed == True)
         conn.execute(stmt)
         conn.commit()
 
@@ -99,8 +123,8 @@ def add(ctx, description: str) -> None:
 @click.pass_context
 def list(ctx, all: bool) -> None:
     """Display all pending tasks that haven't been completed"""
-    print(get_db_time(ctx.obj["engine"]))
     tasks = get_tasks(ctx.obj["engine"], all)
+    show_table_title(ctx.obj["engine"])
     show_tasks(tasks)
 
 
@@ -110,7 +134,6 @@ def list(ctx, all: bool) -> None:
 def complete(ctx, id: str) -> None:
     "Mark a specific task as completed"
     complete_task(ctx.obj["engine"], id)
-    show_tasks(get_task(ctx.obj["engine"], id))
 
 
 @cli.command
@@ -120,6 +143,20 @@ def delete(ctx, id: str) -> None:
     "Permanently remove a task from your list"
     delete_task(ctx.obj["engine"], id)
     show_tasks(get_task(ctx.obj["engine"], id))
+
+
+@cli.command
+@click.option(
+    "-a",
+    "--all",
+    is_flag=True,
+    default=False,
+    help="Clear all tasks, including those that are still pending.",
+)
+@click.pass_context
+def clear(ctx, all: bool) -> None:
+    "Remove all completed tasks from your list. Use -a or --all to clear all tasks, including those that are still pending."
+    clear_tasks(ctx.obj["engine"], all)
 
 
 if __name__ == "__main__":

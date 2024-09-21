@@ -5,9 +5,9 @@ from sqlalchemy import (
     create_engine,
     String,
     Boolean,
-    func,
 )
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
+from pytz import timezone
 
 MAX_DESC_CHARS = 1000
 
@@ -22,7 +22,8 @@ class Task(Base):
     description: Mapped[str] = mapped_column(String(MAX_DESC_CHARS))
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     created: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone("Australia/Sydney")),
     )
 
 
