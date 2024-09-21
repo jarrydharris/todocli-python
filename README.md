@@ -78,67 +78,9 @@ $ tasks delete <taskid>
 
 ## Notable Packages Used
 
-- `encoding/csv` for writing out as a csv file
-- `strconv` for turning types into strings and visa versa
-- `text/tabwriter` for writing out tab aligned output
-- `os` for opening and reading files
-- `github.com/spf13/cobra` for the command line interface
-- `github.com/mergestat/timediff` for displaying relative friendly time differences (1 hour ago, 10 minutes ago, etc)
- 
-## Custom Resources
-
-### Example Application
-
-You can find an [example version](https://github.com/dreamsofcode-io/goprojects/releases/tag/0.1.0) of this todo list on the releases tab of this repo.
-
-### Example Data File
-
-Additionally, an example CSV looks like as follows:
-
-```
-ID,Description,CreatedAt,IsComplete
-1,My new task,2024-07-27T16:45:19-05:00,true
-2,Finish this video,2024-07-27T16:45:26-05:00,true
-3,Find a video editor,2024-07-27T16:45:31-05:00,false
-```
-
-## Technical Considerations
-
-### Stderr vs Stdout
-
-Make sure to write any diagnostics or errors to stderr stream and write output to stdout.
-
-### File Locking
-One major consideration is that the underlying data file should be locked by the process to prevent concurrent read/writes. This can
-be achieved using the flock system call in unix like systems to obtain an exclusive lock on the file.
-
-You can achieve this in go using the following code:
-
-```go
-func loadFile(filepath string) (*os.File, error) {
-	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open file for reading")
-	}
-
-    // Exclusive lock obtained on the file descriptor
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
-		_ = f.Close()
-		return nil, err
-	}
-
-	return f, nil
-}
-```
-
-Then to unlock the file, use the following:
-
-```go
-func closeFile(f *os.File) error {
-	syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
-	return f.Close()
-}
-```
+🧹- `click` simple cli module
+- `sqlalchemy` for handling db connections and models
+- `sqlite3` Simple in memory db
 
 ## Extra Features
 

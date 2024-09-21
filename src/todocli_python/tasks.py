@@ -69,7 +69,13 @@ def list(ctx, all: bool) -> None:
 @click.pass_context
 @click.argument("id")
 def complete(ctx, id: str) -> None:
-    with ctx.obj["engine"].connect() as conn:
+    "Mark a task as complete."
+    complete_task(ctx.obj["engine"], id)
+    show_tasks(get_task(ctx.obj["engine"], id))
+
+
+def complete_task(engine: Engine, id: int):
+    with engine.connect() as conn:
         stmt = update(Task).where(Task.id == id).values({"completed": True})
         conn.execute(stmt)
         conn.commit()
@@ -79,6 +85,7 @@ def complete(ctx, id: str) -> None:
 @click.pass_context
 @click.argument("id")
 def delete(ctx, id: str) -> None:
+    "Removes a task perminantly from the data store."
     with ctx.obj["engine"].connect() as conn:
         stmt = sqlalchemy.delete(Task).where(Task.id == id)
         conn.execute(stmt)
